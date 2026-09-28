@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Token Usage (aliuzq)
 // @namespace    aliuzq
-// @version      1.19.11.2
+// @version      1.19.11.3
 // @description  DeepSeek API Token 用量与费用统计面板，按官方费率计算，只在 Codex 运行时工作。
 // @match        app://-/*
 // @run-at       document-start
@@ -10,7 +10,8 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.19.11.2";
+  const VERSION = "1.19.11.3";
+  const DEEPSEEK_FAVICON_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAEr0lEQVR42s1WX4iUVRT/nXPv/WZ320wJpX8igllZCiEllDqmRNiuowVjEL1UspuzW1n6EiRfo/TUo+6SkkhBL44vOmvuUkIbBetDUGhqaRCVVCoG6/6Z+b57z+lhdtxxzKy3ztPlnHvPd37n/u75fcD/xlQpn1cTx8qN7nxeDaB0o2NNAaV8Hnxh0bX+VYAUiyQ3qYAA0kbPNcU0V9ZsT3Xpnc+8qU/mCrqsdqC2v7Og3fmCtk/nqCGtIZtCEMfKUxVSbouu0VSWK3APFFDCbwQsZuIniOXWkMqzS+fYw8UiNPcS2rVFLoPwbrnPvNOMYm1PZSHl82pKJQqdm/UR47CLGcvIANDpJmoAVIEQ8PvoFcwf/pAqcaz8zQXcLSxnbMRtweNzjCOn7WgzBveHKlaDpIsAoKM7edS2uGPMaE8TCaTQpu4SFGQsMxQnfZK8cGRP5tvOLm0jJ6eZ+S62sL4qwyDcZyzfYSOgMi4jtP51nSkpjhuHe30qVQAREQggup5IKi5iFsGfqceGT/rpi3W9ur2lDTsmxySxjiMJNdTMQPB+HUuKQtSGhSBQ1MIt1jEDTKr1xjRQjojTVFJVmWmNHOos6PLybto5OS67jeUoeKRsAGZcTFN0lfvcAHX2hLPGcGsIMgRFRISHACxxGea0CqiKENFVhjET2NTWQTAWvH/RQH9hZ0eC1xTEm9PxK4cH98+4iFjZOscL0gS7BvrNa/Uk63t0cZpINxG6jWXrvQRSkHHEIeCwT3CASHa6iOdDbUlFxlQICq3yBA4M7p9xJRurHS6SZyIoQeZNcTcCgEN9dKK82/SqDytU5Hvn2CghqJISyWwiKNLqKvG4BIgA1F4jPJ/PzEUVsfJwEQEAOE2gCn4Yi2BKJUoApThWXtqlrvx+NCITnA1BTljLToJ4Zl4CyKaBvW0/+9S/bAwzQBVjoQQ5XipSkn8QV98DQ+WHqAVzJy7hsfqoKBZJvt5LaTZWW95Hf1DCORG5TMwsAbcw8+PrevU9MrwyBIWqOFWQihxsZh6D+Kh1AKlsA0gb59BwkXw+1ujQHvopBO42FkYVqQoiF2FblOGtIhqsY5NW5XTrHDsEVSpthEx/QLFvclwqLkMdnT36fD0poARVKhUpAYAj/XQwrcjHUQucqqRJVUJaEc8EJgaU5I1SkZL8RnDjuOByP32nyn3WEZikP1dIVtaSknb0IrthSxjueEVXAIC3XEgrctZl2E29dmaDkFaw9UifG6qPnWtalM+ruX0Mb0+OyVdRK9+m7AY6e/wmABg7iS/F8wNRK4ZzPbpjcBeNYrKyKgT5kQ1ZGGgIOE8OnwFAqQS5Xg/imFEsSsdmncVGSplWXiMeSKoyAuAcgLVEmOUyzD7BpyLYQUA7sXxkLM9mAxgHTI7K0dHZnKvRc7pFVFcrEGk2q3bGYmxnwquZNswCgKQKqNSGRqYVIAaqEzjnPd6KIlz2ISwhGNaAU+V+DDWLDjVKIqgWfLqg85zFcyKyGsoLACEFhAlniPhYdRIHBz+gX/+N0v6tZDZeVDZWCwBzTkEb/XXFqtO6Of7PFitnY7XNMhpP+aE3FvmbILiRmF/drv/1Z+Qv33V2H/NVRiQAAAAASUVORK5CYII=";
   const PANEL_API = "__deepseekUsagePanel";
   const STORAGE_KEY = "__deepseekUsagePanelV1";
   const SIDEBAR_BUTTON_ID = "deepseek-usage-sidebar-button";
@@ -2391,6 +2392,14 @@
         height: 12px;
         background: color-mix(in srgb, currentColor 18%, transparent);
       }
+      #${SIDEBAR_BUTTON_ID} .dsu-launcher-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        flex: none;
+      }
       #${SIDEBAR_BUTTON_ID}:hover,
       #${SIDEBAR_BUTTON_ID}[data-active="true"] {
         background: color-mix(in srgb, currentColor 10%, transparent);
@@ -2863,6 +2872,7 @@
   function launcherMarkup(compact) {
     if (compact) {
       return `
+        <span class="dsu-launcher-icon" aria-hidden="true"><img src="${DEEPSEEK_FAVICON_DATA}" alt="" width="18" height="18"></span>
         <span class="dsu-launcher-item">
           <span class="dsu-launcher-label">今日消耗</span>
           <span class="dsu-launcher-value" data-field="launcherCost">—</span>
