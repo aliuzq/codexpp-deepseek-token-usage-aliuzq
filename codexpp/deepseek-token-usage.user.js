@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Token Usage (aliuzq)
 // @namespace    aliuzq
-// @version      1.19.11.8
+// @version      1.19.11.9
 // @description  DeepSeek API Token 用量与费用统计面板，按官方费率计算，只在 Codex 运行时工作。
 // @match        app://-/*
 // @run-at       document-start
@@ -10,7 +10,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.19.11.8";
+  const VERSION = "1.19.11.9";
   const DEEPSEEK_FAVICON_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAACQklEQVR42rXWTYhOYRQH8N8775BkxEIT+VrIRjNWPha+JRZYaEqxRFY2dpTCliywtdBY2kxJkc8Sdooag0lITY3PDE3Mx7U5t555unfMLDz19L7POf97/uece855Lv95NaeBbQS+gWKqNhoV55YK+Xjsf9kqMllL7aFiLcQOrMvwRzEnkZWRNqE1UYyHcjs2YHHoBtCBrWjDvsAXcb4c5KdDVmAsnl2Z5nANniagqj2AWYlTS/ArdPeDsB2bcSbwYC2GAjiKkWyPhlcFXmB1PDcb7wNT4EEYLR16AvPwKlI0HIbGayIoSb5iU5CcCtnvCvxuOFljbLSG6E/Iv8W7gkuJrsAgjpTpeYOPuIJuPEs8LbL/+R5CV1RWSXAIC9JKK3AxK8mOqI6RJJqSqAcH8TYjKn/bwkZr2kQ9UU0zM6L16MtS8xgHsBSfsgj7wsaEZh3Dh8R42c0z4tyO5wnJT9wL3d6QDwf51arx8TJAW5IulIW5HF8iVWXFnMP5JIUF9lQRXAjljTx3scrIurJKKTLjvYFt5LNsVYRYRG7VAXEtISkbsizlnZNN1zLU70kDibQ9xMY4z8XrwI7E+xvB8cmMN2O+PIoHf+Bwkq7B8PJsyBahP0nPO3TWjP8JY3c+7mRzpBufk1K8Hd27K4jTd3EzHGpUXTjlZdEas+VYENatfpyImdQZTvbiVn7pNGpupGXYj21YEbrxaKS7uB7jZUr3bNWVOVbRC0Umb2Y2cv2kqyUMt9TIG9P5UpgOppjuZ8tfDJncCFTAWnEAAAAASUVORK5CYII=";
   const DEEPSEEK_FAVICON_DATA = "data:" + "image/png;base64," + DEEPSEEK_FAVICON_BASE64;
   const DEEPSEEK_FAVICON_WHITE_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJnSURBVEhLzZXLi41xGMdnzJgmGbGQyG1lI6xcFm6JWDBZWI0lspWFhVIuS7LAkoX4A4gkyaVk7NQozLiElHK/JtePvu/5PjPPec97jsvKt97znt/3uf6e3/P83ra2/wVAO9ABjCrx4toz1xTJSWfpqXNahaogdXa/cwJMBlYBC70u9IGtwNjgUpId2TiUJVwJ7AaO+tkHnALeAT+B9clRD/BN+mE/7LS2nlXU0Iv5wA1a4xnQHUkB04BPll12wEnAMmCP9CPSAuCDFb87q/yI+2H5LWCe7cYAj60jXHESgX4pjQcGvf3PdqT/VYggr4GlDrLL3JekF1grhZ1l1lDWVYG+mn8DLHaQw0kmPAe2RHnuAU+BY8AJ4GbKVMj/y1BZN6izvFaATcDEOCf9CIeGj74mmAMcSbXNZ3Aa2Ag89FqI89O7xz46w5m2KyP1blcp0CLgro2jNNeBPmA68KK0Q+l2RRuHEyk8CefubymM9lptN5CCfAQuWdZrXs2h4MfN1w3ZHSstjylMsmKbwEzglUslqGP2Awe8Dn5dVYCDFp7NTpM8dqbDFKJTAuH8tsujJEcmGpjtLQp94bRBscaftJ6CxEBGK6+2zkj2yTC2+jYGyLzKdhVY4vU4YMi6cq7z03u75ZXO1T3dwDUbvgc2W6arWkOjLPeamwLct6528QiYa1nDlS0ybtIJwEUbCv0evJepFS9oeoE1DpxxzglVBilIK+gW1F3TCpp+HfoKYJtK5KCNzgNZCMwAdgDnXY4HdnrGDqfWW/8hynNgLj6bZb74ajWTt4QnueFbnPjmpfhbxDz8q9NflXsN57IkQyYAAAAASUVORK5CYII=";
@@ -166,6 +166,7 @@
     dragState: null,
     resizeState: null,
     resizeObserver: null,
+    resizeMode: false,
     observer: null,
     chartHitboxes: [],
     balanceStatus: "",
@@ -2222,6 +2223,7 @@
               <button type="button" data-action="mode-day">按天</button>
               <button type="button" data-action="mode-month">按月</button>
             </div>
+            <button type="button" class="dsu-icon-button dsu-resize-mode-button" data-action="toggle-resize" title="调整大小">⤢</button>
             <button type="button" class="dsu-icon-button" data-action="refresh" title="刷新">↻</button>
             <button type="button" class="dsu-icon-button" data-action="minimize" title="收起">−</button>
             <button type="button" class="dsu-icon-button" data-action="close" title="关闭">×</button>
@@ -2439,6 +2441,15 @@
         backdrop-filter: blur(18px);
       }
       .dsu-panel[hidden] { display: none !important; }
+      .dsu-panel.dsu-resize-mode {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 18px 60px rgba(0, 0, 0, 0.46);
+      }
+      .dsu-panel.dsu-resize-mode .dsu-resize-mode-button {
+        color: #ffffff;
+        background: #2563eb;
+        border-color: #3b82f6;
+      }
       .dsu-header {
         display: flex;
         align-items: center;
@@ -2511,6 +2522,9 @@
       .dsu-panel.dsu-minimized [data-action="refresh"] {
         display: none !important;
       }
+      .dsu-panel.dsu-minimized [data-action="toggle-resize"] {
+        display: none !important;
+      }
       .dsu-panel.dsu-minimized .dsu-mini-stats {
         display: flex;
       }
@@ -2528,11 +2542,13 @@
       }
       .dsu-resize-handle {
         position: absolute;
-        right: 2px;
-        bottom: 2px;
-        width: 18px;
-        height: 18px;
+        right: 4px;
+        bottom: 4px;
+        width: 22px;
+        height: 22px;
         z-index: 5;
+        display: none;
+        border-radius: 6px;
         cursor: nwse-resize;
         touch-action: none;
         -webkit-app-region: no-drag !important;
@@ -2565,6 +2581,8 @@
       .dsu-resize-zone {
         position: absolute;
         z-index: 6;
+        pointer-events: none;
+        opacity: 0;
         touch-action: none;
         -webkit-app-region: no-drag !important;
       }
@@ -2615,6 +2633,15 @@
       }
       .dsu-panel.dsu-minimized .dsu-resize-zone {
         display: none;
+      }
+      .dsu-panel.dsu-resize-mode .dsu-resize-handle {
+        display: block;
+        background: rgba(37, 99, 235, 0.22);
+      }
+      .dsu-panel.dsu-resize-mode .dsu-resize-zone {
+        pointer-events: auto;
+        opacity: 0.22;
+        background: rgba(59, 130, 246, 0.16);
       }
       .dsu-title-block { display: flex; align-items: center; gap: 10px; min-width: 0; }
       .dsu-logo {
@@ -3022,6 +3049,7 @@
     else if (action === "next") moveScope(1);
     else if (action === "today") setToday();
     else if (action === "refresh") render({ animate: true });
+    else if (action === "toggle-resize") toggleResizeMode();
     else if (action === "minimize") toggleMinimized();
     else if (action === "close") closePanel();
     else if (action === "clear") clearRecords();
@@ -3151,11 +3179,13 @@
       helperPlatformPick: panel.querySelector(
         '[data-field="helperPlatformPick"]'
       ),
+      resizeModeButton: panel.querySelector('[data-action="toggle-resize"]'),
       balanceFetchButton: panel.querySelector('[data-action="balance-fetch"]'),
     };
     restorePanelPosition(panel);
     applyPanelMinimized(panel);
     applyPanelSize(panel);
+    applyPanelResizeMode(panel);
     setupPanelDrag(panel);
     setupPanelResize(panel);
     if (!state.resizeObserver && typeof ResizeObserver === "function") {
@@ -3180,7 +3210,13 @@
      */
     if (panelContentReplaced && !panel.hidden) render();
     window.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closePanel();
+      if (event.key === "Escape") {
+        if (state.ui?.panel?.classList.contains("dsu-resize-mode")) {
+          setPanelResizeMode(false);
+          return;
+        }
+        closePanel();
+      }
     });
     window.addEventListener("resize", () => {
       if (!state.ui?.panel?.hidden) {
@@ -3428,6 +3464,31 @@
     }
   }
 
+  function applyPanelResizeMode(panel = state.ui?.panel) {
+    if (!panel) return;
+    const enabled = Boolean(state.resizeMode) && !state.settings.panelMinimized;
+    panel.classList.toggle("dsu-resize-mode", enabled);
+    const button = panel.querySelector('[data-action="toggle-resize"]');
+    if (button) {
+      button.dataset.active = String(enabled);
+      button.title = enabled ? "退出调整大小" : "调整大小";
+      button.setAttribute("aria-pressed", String(enabled));
+    }
+    const handle = panel.querySelector('[data-resize-direction="se"]');
+    if (handle) {
+      handle.title = enabled ? "拖动调整大小，双击恢复默认" : "调整大小未启用";
+    }
+  }
+
+  function setPanelResizeMode(enabled) {
+    state.resizeMode = Boolean(enabled) && !state.settings.panelMinimized;
+    applyPanelResizeMode();
+  }
+
+  function toggleResizeMode() {
+    setPanelResizeMode(!state.resizeMode);
+  }
+
   function setupPanelResize(panel) {
     if (panel.__deepseekResizeTag === instance.bindTag) return;
     panel.__deepseekResizeTag = instance.bindTag;
@@ -3451,6 +3512,7 @@
       if (!direction) return;
       if (event.button !== undefined && event.button !== 0) return;
       if (panel.classList.contains("dsu-minimized")) return;
+      if (!panel.classList.contains("dsu-resize-mode")) return;
       event.preventDefault();
       event.stopPropagation();
       const rect = panel.getBoundingClientRect();
@@ -3585,6 +3647,7 @@
     handle.addEventListener("dblclick", (event) => {
       event.preventDefault();
       event.stopPropagation();
+      if (!panel.classList.contains("dsu-resize-mode")) return;
       state.settings.panelWidth = null;
       state.settings.panelHeight = null;
       panel.style.width = "";
@@ -3603,6 +3666,7 @@
       Boolean(state.settings.panelMinimized)
     );
     const body = panel.querySelector('[data-field="panelBody"]');
+    if (panel.classList.contains("dsu-minimized")) setPanelResizeMode(false);
     if (body) body.hidden = Boolean(state.settings.panelMinimized);
     const button = panel.querySelector('[data-action="minimize"]');
     if (button) {
@@ -3648,6 +3712,7 @@
   }
 
   function closePanel() {
+    setPanelResizeMode(false);
     if (state.ui?.panel) state.ui.panel.hidden = true;
     const button = document.getElementById(SIDEBAR_BUTTON_ID);
     button?.setAttribute("data-active", "false");
