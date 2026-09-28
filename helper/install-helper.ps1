@@ -12,7 +12,7 @@
  *
  * 不下载仓库、直接从网络跑也可以（面板「复制安装命令」给的就是这条）：
  *   $p = Join-Path $env:TEMP 'dstu-helper-install.ps1'
- *   irm https://raw.githubusercontent.com/Saydness/codexpp-deepseek-token-usage/main/helper/install-helper.ps1 -OutFile $p
+ *   irm https://raw.githubusercontent.com/aliuzq/codexpp-deepseek-token-usage-aliuzq/main/helper/install-helper.ps1 -OutFile $p
  *   & $p
  *
  * 安装位置：%LOCALAPPDATA%\Codex++\dstu-helper\
@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 
 $HelperFiles = @('dstu-helper.mjs', 'balance_sources.mjs', 'set_balance_key.ps1', 'start-helper.vbs', 'ensure-helper.vbs')
 $TaskName = 'DeepSeek 用量助手'
-$DefaultSourceUrl = 'https://raw.githubusercontent.com/Saydness/codexpp-deepseek-token-usage/main/helper'
+$DefaultSourceUrl = 'https://raw.githubusercontent.com/aliuzq/codexpp-deepseek-token-usage-aliuzq/main/helper'
 $CodexPlusDir = Join-Path $env:LOCALAPPDATA 'Codex++'
 $InstallDir = Join-Path $CodexPlusDir 'dstu-helper'
 $StartupLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'DeepSeek 用量助手.lnk'

@@ -43,6 +43,7 @@
   const BALANCE_BRIDGE_FN = "__codexSessionDeleteBridge";
   const BALANCE_BRIDGE_PATH = "/llm-proxy";
   const BALANCE_ENDPOINT = "https://api.deepseek.com/user/balance";
+  const DEEPSEEK_RECHARGE_URL = "https://platform.deepseek.com/top_up";
   const BALANCE_QUERY_TIMEOUT_MS = 20000;
   /*
    * Codex++ 的网络桥目前只放行 POST，而 DeepSeek 余额接口只认 GET，面板直连
@@ -70,10 +71,10 @@
    * 检查机器上有没有能用的 Node.js：有就直接用，没有才替用户装。
    */
   const HELPER_RAW_BASE =
-    "https://raw.githubusercontent.com/Saydness/codexpp-deepseek-token-usage/main/helper";
+    "https://raw.githubusercontent.com/aliuzq/codexpp-deepseek-token-usage-aliuzq/main/helper";
   /* 直连 GitHub 不通时的备用源（国内可访问的 CDN）。 */
   const HELPER_MIRROR_BASE =
-    "https://cdn.jsdelivr.net/gh/Saydness/codexpp-deepseek-token-usage@main/helper";
+    "https://cdn.jsdelivr.net/gh/aliuzq/codexpp-deepseek-token-usage-aliuzq@main/helper";
   /* 用户刚填的 Key：默认只存在页面内存；勾了"记住"才写 localStorage。 */
   let pendingBalanceKey = "";
   /* 这是一份脚本 = 一次 Codex 启动；第一次打开面板要占这个标记。 */
@@ -2272,6 +2273,7 @@
               会把助手在跑时的显示意图按死。
             -->
             <button type="button" class="dsu-text-button" data-helper-or-bridge data-action="balance-fetch" style="display: none">刷新余额</button>
+            <button type="button" class="dsu-text-button" data-action="balance-recharge">余额充值</button>
           </div>
           <div class="dsu-balance-settings" data-field="balanceSettings" hidden>
             <p class="dsu-balance-sync">
@@ -2390,6 +2392,8 @@
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
       }
+      #${SIDEBAR_BUTTON_ID} [data-field="launcherCost"] { color: #ED867C; }
+      #${SIDEBAR_BUTTON_ID} [data-field="launcherBalance"] { color: #81C672; }
       #${SIDEBAR_BUTTON_ID} .dsu-launcher-sep {
         width: 1px;
         height: 12px;
@@ -2433,7 +2437,6 @@
         border-radius: 16px;
         box-shadow: 0 18px 60px rgba(0, 0, 0, 0.46);
         backdrop-filter: blur(18px);
-        font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
       }
       .dsu-panel[hidden] { display: none !important; }
       .dsu-header {
@@ -3005,6 +3008,13 @@
     }
   }
 
+  function openRechargePage() {
+    const win = window.open(DEEPSEEK_RECHARGE_URL, "_blank", "noopener,noreferrer");
+    if (!win) {
+      setBalanceStatus("余额充值页面被浏览器拦截，请允许弹出窗口后重试", "warn");
+    }
+  }
+
   function handlePanelAction(action) {
     if (action === "mode-day") setMode("day");
     else if (action === "mode-month") setMode("month");
@@ -3016,6 +3026,7 @@
     else if (action === "close") closePanel();
     else if (action === "clear") clearRecords();
     else if (action === "balance-fetch") requestBalanceRefresh();
+    else if (action === "balance-recharge") openRechargePage();
     else if (action === "balance-settings") toggleBalanceSettings();
     else if (action === "balance-reset") resetBalances();
     else if (action === "helper-install") copyHelperCommand("install");
@@ -3073,6 +3084,7 @@
     if (modelSelect) {
       modelSelect.onchange = () => {
         state.settings.model = modelSelect.value || DEFAULT_MODEL;
+        state.activeModel = state.settings.model;
         scheduleSave();
         render();
       };
@@ -4044,7 +4056,7 @@
       state.ui.monthInput.value = state.settings.month;
       state.ui.dateInput.hidden = state.settings.mode !== "day";
       state.ui.monthInput.hidden = state.settings.mode !== "month";
-      state.ui.modelSelect.value = state.settings.model || DEFAULT_MODEL;
+      state.ui.modelSelect.value = selectedModel;
 
       const scopeLabel =
         state.settings.mode === "month"
@@ -4301,7 +4313,7 @@
   }
 
   function chartPill(context, x, y, text, background, color, align, limit) {
-    context.font = "bold 10px Segoe UI, sans-serif";
+    context.font = `bold 10px ${getComputedStyle(state.ui.panel).fontFamily}`;
     const pillWidth = context.measureText(text).width + 14;
     let left =
       align === "right"
@@ -4362,7 +4374,7 @@
       text: "#64748b",
     };
 
-    context.font = "10px Segoe UI, sans-serif";
+    context.font = `10px ${getComputedStyle(state.ui.panel).fontFamily}`;
     context.textAlign = "right";
     context.textBaseline = "middle";
     for (let index = 0; index <= 4; index += 1) {

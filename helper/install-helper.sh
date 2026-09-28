@@ -11,7 +11,7 @@
 #   bash install-helper.sh -Uninstall   卸载
 #
 # 不下载仓库、直接从网络跑也可以（面板「复制安装命令」给的就是这条）：
-#   curl -fsSL https://raw.githubusercontent.com/Saydness/codexpp-deepseek-token-usage/main/helper/install-helper.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/aliuzq/codexpp-deepseek-token-usage-aliuzq/main/helper/install-helper.sh | bash
 #
 # 安装位置：~/Library/Application Support/Codex++/dstu-helper
 # 自启动：  ~/Library/LaunchAgents/com.saydness.dstu-helper.plist
@@ -25,7 +25,7 @@
 set -u
 
 HELPER_FILES="dstu-helper.mjs balance_sources.mjs start-helper.sh"
-DEFAULT_SOURCE_URL="https://raw.githubusercontent.com/Saydness/codexpp-deepseek-token-usage/main/helper"
+DEFAULT_SOURCE_URL="https://raw.githubusercontent.com/aliuzq/codexpp-deepseek-token-usage-aliuzq/main/helper"
 LABEL="com.saydness.dstu-helper"
 
 OS="$(uname -s)"
