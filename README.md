@@ -1,4 +1,4 @@
-# DeepSeek Token Usage for Codex++
+# DeepSeek Token Usage for Codex++（aliuzq 版）
 
 这是一个 Codex++ 用户脚本，不是独立后台服务。
 
