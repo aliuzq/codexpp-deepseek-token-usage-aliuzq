@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Token Usage (aliuzq)
 // @namespace    aliuzq
-// @version      1.19.11.1
+// @version      1.19.11.2
 // @description  DeepSeek API Token 用量与费用统计面板，按官方费率计算，只在 Codex 运行时工作。
 // @match        app://-/*
 // @run-at       document-start
@@ -10,7 +10,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.19.11.1";
+  const VERSION = "1.19.11.2";
   const PANEL_API = "__deepseekUsagePanel";
   const STORAGE_KEY = "__deepseekUsagePanelV1";
   const SIDEBAR_BUTTON_ID = "deepseek-usage-sidebar-button";
@@ -2370,6 +2370,27 @@
       #${SIDEBAR_BUTTON_ID} {
         color: inherit;
       }
+      #${SIDEBAR_BUTTON_ID} .dsu-launcher-item {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        min-width: 0;
+        white-space: nowrap;
+      }
+      #${SIDEBAR_BUTTON_ID} .dsu-launcher-label {
+        color: var(--text-secondary, #94a3b8);
+        font-size: 10px;
+      }
+      #${SIDEBAR_BUTTON_ID} .dsu-launcher-value {
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      #${SIDEBAR_BUTTON_ID} .dsu-launcher-sep {
+        width: 1px;
+        height: 12px;
+        background: color-mix(in srgb, currentColor 18%, transparent);
+      }
       #${SIDEBAR_BUTTON_ID}:hover,
       #${SIDEBAR_BUTTON_ID}[data-active="true"] {
         background: color-mix(in srgb, currentColor 10%, transparent);
@@ -2842,12 +2863,15 @@
   function launcherMarkup(compact) {
     if (compact) {
       return `
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"
-             stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-             stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path>
-        </svg>
-        <span class="dsu-sidebar-badge" data-field="sidebarBadge">—</span>
+        <span class="dsu-launcher-item">
+          <span class="dsu-launcher-label">今日消耗</span>
+          <span class="dsu-launcher-value" data-field="launcherCost">—</span>
+        </span>
+        <span class="dsu-launcher-sep" aria-hidden="true"></span>
+        <span class="dsu-launcher-item">
+          <span class="dsu-launcher-label">余额</span>
+          <span class="dsu-launcher-value" data-field="launcherBalance">—</span>
+        </span>
       `;
     }
     return `
@@ -2890,7 +2914,7 @@
       if (compact) {
         button.className =
           "no-drag cursor-interaction flex h-7 items-center " +
-          "justify-center gap-1 rounded-md px-1.5 text-xs";
+          "justify-center gap-2 rounded-md px-2 text-xs";
         button.style.cssText =
           "border:0;background:transparent;color:inherit;cursor:pointer;";
         button.innerHTML = launcherMarkup(true);
@@ -2924,11 +2948,21 @@
     const badge = document.querySelector(
       `#${SIDEBAR_BUTTON_ID} [data-field="sidebarBadge"]`
     );
-    if (!badge) return;
     const cost = state.records
       .filter((record) => record.d === todayKey())
       .reduce((sum, record) => sum + Number(record.cost || 0), 0);
-    badge.textContent = cost ? formatCost(cost) : "—";
+    if (badge) badge.textContent = cost ? formatCost(cost) : "—";
+    const costValue = document.querySelector(
+      `#${SIDEBAR_BUTTON_ID} [data-field="launcherCost"]`
+    );
+    if (costValue) costValue.textContent = cost ? formatCost(cost) : "—";
+    const balanceValue = document.querySelector(
+      `#${SIDEBAR_BUTTON_ID} [data-field="launcherBalance"]`
+    );
+    if (balanceValue) {
+      const latest = latestBalance();
+      balanceValue.textContent = latest ? formatBalance(latest.v, latest.c) : "—";
+    }
   }
 
   function handlePanelAction(action) {
