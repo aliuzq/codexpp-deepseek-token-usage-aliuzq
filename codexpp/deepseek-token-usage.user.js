@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Token Usage (aliuzq)
 // @namespace    aliuzq
-// @version      1.19.11.9
+// @version      1.19.11.10
 // @description  DeepSeek API Token 用量与费用统计面板，按官方费率计算，只在 Codex 运行时工作。
 // @match        app://-/*
 // @run-at       document-start
@@ -10,7 +10,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.19.11.9";
+  const VERSION = "1.19.11.10";
   const DEEPSEEK_FAVICON_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAACQklEQVR42rXWTYhOYRQH8N8775BkxEIT+VrIRjNWPha+JRZYaEqxRFY2dpTCliywtdBY2kxJkc8Sdooag0lITY3PDE3Mx7U5t555unfMLDz19L7POf97/uece855Lv95NaeBbQS+gWKqNhoV55YK+Xjsf9kqMllL7aFiLcQOrMvwRzEnkZWRNqE1UYyHcjs2YHHoBtCBrWjDvsAXcb4c5KdDVmAsnl2Z5nANniagqj2AWYlTS/ArdPeDsB2bcSbwYC2GAjiKkWyPhlcFXmB1PDcb7wNT4EEYLR16AvPwKlI0HIbGayIoSb5iU5CcCtnvCvxuOFljbLSG6E/Iv8W7gkuJrsAgjpTpeYOPuIJuPEs8LbL/+R5CV1RWSXAIC9JKK3AxK8mOqI6RJJqSqAcH8TYjKn/bwkZr2kQ9UU0zM6L16MtS8xgHsBSfsgj7wsaEZh3Dh8R42c0z4tyO5wnJT9wL3d6QDwf51arx8TJAW5IulIW5HF8iVWXFnMP5JIUF9lQRXAjljTx3scrIurJKKTLjvYFt5LNsVYRYRG7VAXEtISkbsizlnZNN1zLU70kDibQ9xMY4z8XrwI7E+xvB8cmMN2O+PIoHf+Bwkq7B8PJsyBahP0nPO3TWjP8JY3c+7mRzpBufk1K8Hd27K4jTd3EzHGpUXTjlZdEas+VYENatfpyImdQZTvbiVn7pNGpupGXYj21YEbrxaKS7uB7jZUr3bNWVOVbRC0Umb2Y2cv2kqyUMt9TIG9P5UpgOppjuZ8tfDJncCFTAWnEAAAAASUVORK5CYII=";
   const DEEPSEEK_FAVICON_DATA = "data:" + "image/png;base64," + DEEPSEEK_FAVICON_BASE64;
   const DEEPSEEK_FAVICON_WHITE_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJnSURBVEhLzZXLi41xGMdnzJgmGbGQyG1lI6xcFm6JWDBZWI0lspWFhVIuS7LAkoX4A4gkyaVk7NQozLiElHK/JtePvu/5PjPPec97jsvKt97znt/3uf6e3/P83ra2/wVAO9ABjCrx4toz1xTJSWfpqXNahaogdXa/cwJMBlYBC70u9IGtwNjgUpId2TiUJVwJ7AaO+tkHnALeAT+B9clRD/BN+mE/7LS2nlXU0Iv5wA1a4xnQHUkB04BPll12wEnAMmCP9CPSAuCDFb87q/yI+2H5LWCe7cYAj60jXHESgX4pjQcGvf3PdqT/VYggr4GlDrLL3JekF1grhZ1l1lDWVYG+mn8DLHaQw0kmPAe2RHnuAU+BY8AJ4GbKVMj/y1BZN6izvFaATcDEOCf9CIeGj74mmAMcSbXNZ3Aa2Ag89FqI89O7xz46w5m2KyP1blcp0CLgro2jNNeBPmA68KK0Q+l2RRuHEyk8CefubymM9lptN5CCfAQuWdZrXs2h4MfN1w3ZHSstjylMsmKbwEzglUslqGP2Awe8Dn5dVYCDFp7NTpM8dqbDFKJTAuH8tsujJEcmGpjtLQp94bRBscaftJ6CxEBGK6+2zkj2yTC2+jYGyLzKdhVY4vU4YMi6cq7z03u75ZXO1T3dwDUbvgc2W6arWkOjLPeamwLct6528QiYa1nDlS0ybtIJwEUbCv0evJepFS9oeoE1DpxxzglVBilIK+gW1F3TCpp+HfoKYJtK5KCNzgNZCMwAdgDnXY4HdnrGDqfWW/8hynNgLj6bZb74ajWTt4QnueFbnPjmpfhbxDz8q9NflXsN57IkQyYAAAAASUVORK5CYII=";
@@ -77,8 +77,6 @@
     "https://cdn.jsdelivr.net/gh/aliuzq/codexpp-deepseek-token-usage-aliuzq@main/helper";
   /* 用户刚填的 Key：默认只存在页面内存；勾了"记住"才写 localStorage。 */
   let pendingBalanceKey = "";
-  /* 这是一份脚本 = 一次 Codex 启动；第一次打开面板要占这个标记。 */
-  let openedThisRun = false;
   let panelBalanceKey = "";
   let balanceConfigKey = "";
   let balanceQueryPromise = null;
@@ -125,8 +123,6 @@
       panelTop: null,
       panelWidth: null,
       panelHeight: null,
-      panelMinimized: false,
-      hasOpened: false,
       balanceCurrency: "CNY",
       balanceSettingsOpen: false,
       balanceRequestAt: 0,
@@ -485,6 +481,9 @@
           ...stored.settings,
         };
       }
+      /* 旧版本可能留下已停用的折叠状态，读取时清掉，避免之后继续写回。 */
+      delete state.settings.panelMinimized;
+      delete state.settings.hasOpened;
       /*
        * Codex 每次启动后先看当天的用量：不沿用上次选的日期/月份，
        * 免得一打开看到的是别的日子或上个月。
@@ -496,10 +495,6 @@
       state.settings.model = normalizeModel(
         state.settings.model || DEFAULT_MODEL
       );
-      /* First-time users always get the full panel, never the mini bar. */
-      if (state.settings.hasOpened !== true) {
-        state.settings.panelMinimized = false;
-      }
     } catch (_) {
       state.records = [];
     }
@@ -2214,18 +2209,12 @@
             </div>
           </div>
           <div class="dsu-actions">
-            <div class="dsu-mini-stats" data-field="miniStats">
-              <span class="dsu-mini-scope" data-field="miniScope">今日</span>
-              <span class="dsu-mini-tokens" data-field="miniTokens">0 tokens</span>
-              <strong class="dsu-mini-cost" data-field="miniCost">¥0.000000</strong>
-            </div>
             <div class="dsu-seg">
               <button type="button" data-action="mode-day">按天</button>
               <button type="button" data-action="mode-month">按月</button>
             </div>
             <button type="button" class="dsu-icon-button dsu-resize-mode-button" data-action="toggle-resize" title="调整大小">⤢</button>
             <button type="button" class="dsu-icon-button" data-action="refresh" title="刷新">↻</button>
-            <button type="button" class="dsu-icon-button" data-action="minimize" title="收起">−</button>
             <button type="button" class="dsu-icon-button" data-action="close" title="关闭">×</button>
           </div>
         </header>
@@ -2504,42 +2493,6 @@
         opacity: 0.98;
         box-shadow: 0 24px 72px rgba(0, 0, 0, 0.58);
       }
-      .dsu-panel.dsu-minimized {
-        width: auto !important;
-        height: auto !important;
-        min-width: 280px;
-        max-width: calc(100vw - 16px);
-        min-height: 0;
-        max-height: none;
-        resize: none;
-        border-radius: 10px;
-      }
-      .dsu-panel.dsu-minimized .dsu-body {
-        display: none !important;
-      }
-      .dsu-panel.dsu-minimized .dsu-title-block,
-      .dsu-panel.dsu-minimized .dsu-seg,
-      .dsu-panel.dsu-minimized [data-action="refresh"] {
-        display: none !important;
-      }
-      .dsu-panel.dsu-minimized [data-action="toggle-resize"] {
-        display: none !important;
-      }
-      .dsu-panel.dsu-minimized .dsu-mini-stats {
-        display: flex;
-      }
-      .dsu-panel.dsu-minimized .dsu-header {
-        min-height: 36px;
-        padding: 4px 8px;
-        gap: 6px;
-      }
-      .dsu-panel.dsu-minimized .dsu-actions {
-        gap: 5px;
-      }
-      .dsu-panel.dsu-minimized .dsu-icon-button {
-        width: 26px;
-        height: 24px;
-      }
       .dsu-resize-handle {
         position: absolute;
         right: 4px;
@@ -2574,9 +2527,6 @@
       .dsu-resize-handle:hover::before,
       .dsu-resize-handle:hover::after {
         background: #cbd5e1;
-      }
-      .dsu-panel.dsu-minimized .dsu-resize-handle {
-        display: none;
       }
       .dsu-resize-zone {
         position: absolute;
@@ -2631,9 +2581,6 @@
         bottom: 0;
         cursor: nesw-resize;
       }
-      .dsu-panel.dsu-minimized .dsu-resize-zone {
-        display: none;
-      }
       .dsu-panel.dsu-resize-mode .dsu-resize-handle {
         display: block;
         background: rgba(37, 99, 235, 0.22);
@@ -2653,23 +2600,6 @@
       .dsu-title { font-size: 15px; font-weight: 700; }
       .dsu-subtitle { color: #94a3b8; font-size: 11px; margin-top: 2px; }
       .dsu-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-      .dsu-mini-stats {
-        display: none;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-        font-size: 11px;
-      }
-      .dsu-mini-scope { color: #64748b; }
-      .dsu-mini-tokens {
-        color: #cbd5e1;
-        font-variant-numeric: tabular-nums;
-      }
-      .dsu-mini-cost {
-        color: #f87171;
-        font-size: 13px;
-        font-variant-numeric: tabular-nums;
-      }
       .dsu-seg { display: inline-flex; padding: 2px; border-radius: 9px; background: #0f141c; border: 1px solid #2b3544; }
       .dsu-seg button {
         border: 0; background: transparent; color: #94a3b8; cursor: pointer;
@@ -3025,7 +2955,11 @@
     const costValue = document.querySelector(
       `#${SIDEBAR_BUTTON_ID} [data-field="launcherCost"]`
     );
-    if (costValue) costValue.textContent = cost ? "-" + formatCost(cost) : "—";
+    if (costValue) {
+      costValue.textContent = cost ? "-" + formatCost(cost) : "—";
+      /* 小于 10 元用浅红，达到 10 元及以上用深红。 */
+      costValue.style.color = cost < 10 ? "#ED867C" : "#CD4233";
+    }
     const balanceValue = document.querySelector(
       `#${SIDEBAR_BUTTON_ID} [data-field="launcherBalance"]`
     );
@@ -3050,7 +2984,6 @@
     else if (action === "today") setToday();
     else if (action === "refresh") render({ animate: true });
     else if (action === "toggle-resize") toggleResizeMode();
-    else if (action === "minimize") toggleMinimized();
     else if (action === "close") closePanel();
     else if (action === "clear") clearRecords();
     else if (action === "balance-fetch") requestBalanceRefresh();
@@ -3183,7 +3116,6 @@
       balanceFetchButton: panel.querySelector('[data-action="balance-fetch"]'),
     };
     restorePanelPosition(panel);
-    applyPanelMinimized(panel);
     applyPanelSize(panel);
     applyPanelResizeMode(panel);
     setupPanelDrag(panel);
@@ -3221,9 +3153,7 @@
     window.addEventListener("resize", () => {
       if (!state.ui?.panel?.hidden) {
         clampPanelPosition();
-        if (!state.settings.panelMinimized) {
-          drawChart(chartBuckets(visibleRecords()));
-        }
+        drawChart(chartBuckets(visibleRecords()));
       }
     });
   }
@@ -3252,21 +3182,19 @@
     if (!panel || panel.hidden) return;
     const viewportWidth = Math.max(240, window.innerWidth);
     const viewportHeight = Math.max(160, window.innerHeight);
-    const minimized = panel.classList.contains("dsu-minimized");
     const maxWidth = Math.max(200, viewportWidth - PANEL_MARGIN * 2);
     const maxHeight = Math.max(120, viewportHeight - PANEL_MARGIN * 2);
     let rect = panel.getBoundingClientRect();
 
     /*
-     * When expanding a minimized bar near the right edge, the width changes
-     * from ~280px to ~760px. Force the enlarged width to fit first, then
-     * calculate the left edge again so no part stays off screen.
+     * 面板靠近右边缘时，宽度可能超出视口；先把宽度压到可视范围内，再重算左边。
+     * 保证面板不会留下屏幕外的部分。
      */
-    if (!minimized && rect.width > maxWidth + 1) {
+    if (rect.width > maxWidth + 1) {
       panel.style.width = `${Math.round(maxWidth)}px`;
       rect = panel.getBoundingClientRect();
     }
-    if (!minimized && rect.height > maxHeight + 1) {
+    if (rect.height > maxHeight + 1) {
       panel.style.maxHeight = `${Math.round(maxHeight)}px`;
       rect = panel.getBoundingClientRect();
     }
@@ -3307,9 +3235,7 @@
       const panel = state.ui?.panel;
       if (!panel || panel.hidden) return;
       clampPanelPosition(panel);
-      if (!state.settings.panelMinimized) {
-        drawChart(chartBuckets(visibleRecords()));
-      }
+      drawChart(chartBuckets(visibleRecords()));
     };
     run();
     window.setTimeout(run, 0);
@@ -3452,7 +3378,7 @@
   }
 
   function applyPanelSize(panel = state.ui?.panel) {
-    if (!panel || panel.classList.contains("dsu-minimized")) return;
+    if (!panel) return;
     const width = Number(state.settings.panelWidth);
     const height = Number(state.settings.panelHeight);
     if (Number.isFinite(width) && width > 0) {
@@ -3466,7 +3392,7 @@
 
   function applyPanelResizeMode(panel = state.ui?.panel) {
     if (!panel) return;
-    const enabled = Boolean(state.resizeMode) && !state.settings.panelMinimized;
+    const enabled = Boolean(state.resizeMode);
     panel.classList.toggle("dsu-resize-mode", enabled);
     const button = panel.querySelector('[data-action="toggle-resize"]');
     if (button) {
@@ -3481,7 +3407,7 @@
   }
 
   function setPanelResizeMode(enabled) {
-    state.resizeMode = Boolean(enabled) && !state.settings.panelMinimized;
+    state.resizeMode = Boolean(enabled);
     applyPanelResizeMode();
   }
 
@@ -3511,7 +3437,6 @@
         ?.dataset?.resizeDirection;
       if (!direction) return;
       if (event.button !== undefined && event.button !== 0) return;
-      if (panel.classList.contains("dsu-minimized")) return;
       if (!panel.classList.contains("dsu-resize-mode")) return;
       event.preventDefault();
       event.stopPropagation();
@@ -3659,49 +3584,9 @@
     });
   }
 
-  function applyPanelMinimized(panel = state.ui?.panel) {
-    if (!panel) return;
-    panel.classList.toggle(
-      "dsu-minimized",
-      Boolean(state.settings.panelMinimized)
-    );
-    const body = panel.querySelector('[data-field="panelBody"]');
-    if (panel.classList.contains("dsu-minimized")) setPanelResizeMode(false);
-    if (body) body.hidden = Boolean(state.settings.panelMinimized);
-    const button = panel.querySelector('[data-action="minimize"]');
-    if (button) {
-      button.textContent = state.settings.panelMinimized ? "+" : "−";
-      button.title = state.settings.panelMinimized ? "展开" : "收起";
-    }
-    /* Force layout before fitting, so expanding from a narrow bar repositions. */
-    panel.getBoundingClientRect();
-    clampPanelPosition(panel);
-  }
-
-  function toggleMinimized() {
-    state.settings.panelMinimized = !state.settings.panelMinimized;
-    applyPanelMinimized();
-    applyPanelSize();
-    scheduleSave();
-    clampPanelPosition();
-    schedulePanelClamp();
-  }
-
   function openPanel() {
     ensurePanel();
     if (!state.ui?.panel) return;
-    /*
-     * 每次 Codex 启动（= 这份脚本被注入一次）后的第一次打开，先给完整窗口，
-     * 不要沿用上次收起来的 mini 条；之后用户自己收起来的话，再打开就听他的。
-     */
-    if (!openedThisRun) {
-      openedThisRun = true;
-      state.settings.panelMinimized = false;
-      applyPanelMinimized();
-      applyPanelSize();
-      if (state.settings.hasOpened !== true) state.settings.hasOpened = true;
-      scheduleSave();
-    }
     state.ui.panel.hidden = false;
     const button = document.getElementById(SIDEBAR_BUTTON_ID);
     button?.setAttribute("data-active", "true");
@@ -4145,17 +4030,6 @@
         state.settings.mode === "month" ? "按天用量" : "按小时用量"
       );
       setText("footerRate", rateSummary(selectedModel));
-      setText(
-        "miniScope",
-        state.settings.mode === "day" && scopeLabel === todayKey()
-          ? "今日"
-          : scopeLabel
-      );
-      setText(
-        "miniTokens",
-        `${formatTokens(totals.total || totals.input + totals.output)} tokens`
-      );
-      setText("miniCost", formatCost(totals.cost));
 
       const currency = state.settings.balanceCurrency || "CNY";
       const latest = latestBalance();
