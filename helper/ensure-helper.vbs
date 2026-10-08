@@ -50,36 +50,40 @@ End If
 ' WmiPrvSE, which keeps it out of the scheduled task's process tree (children die
 ' with the task instance) and out of Codex's process tree (children die when the
 ' app restarts).
+' Note: only the command line is passed. The 2- and 3-argument forms (with a
+' Win32_ProcessStartup object or Null) fail with 'Type mismatch' (-2147217403)
+' on some Windows builds, and that used to push this over to the plain launch
+' fallback below - which puts the watchdog back inside the caller's process
+' tree. wscript.exe needs no window style: it never shows a console.
 StartWatchdog()
 
 Function StartWatchdog()
-    Dim startup, wmiProc, pid
-    pid = 0
+    Dim wmiProc, rc, errNo, errDesc
+    rc = -1
+    errNo = 0
+    errDesc = ""
     On Error Resume Next
-    Set startup = GetObject("winmgmts:Win32_ProcessStartup").SpawnInstance_
-    startup.ShowWindow = 0
     Set wmiProc = GetObject("winmgmts:\\.\root\cimv2:Win32_Process")
-    wmiProc.Create """" & wscriptPath & """ """ & watchdogPath & """", startup, pid
+    rc = wmiProc.Create("""" & wscriptPath & """ """ & watchdogPath & """")
+    errNo = Err.Number
+    errDesc = Err.Description
+    On Error GoTo 0
+    If errNo = 0 And rc = 0 Then
+        LogLine "watchdog started (WMI, out of the caller's process tree)"
+        Exit Function
+    End If
+    LogLine "WMI start failed: " & errNo & " " & errDesc & " (rc " & rc & ")"
+    ' Fall back to a plain launch: at least this session works, and the next
+    ' logon / task run retries anyway.
+    On Error Resume Next
+    sh.CurrentDirectory = baseDir
+    sh.Run """" & wscriptPath & """ """ & watchdogPath & """", 0, False
     If Err.Number <> 0 Then
-        LogLine "WMI start failed: " & Err.Number & " " & Err.Description
-        pid = 0
+        LogLine "plain start failed: " & Err.Number & " " & Err.Description
+    Else
+        LogLine "watchdog started (plain launch)"
     End If
     On Error GoTo 0
-    If pid = 0 Then
-        ' Fall back to a plain launch: at least this session works, and the next
-        ' logon / task run retries anyway.
-        On Error Resume Next
-        sh.CurrentDirectory = baseDir
-        sh.Run """" & wscriptPath & """ """ & watchdogPath & """", 0, False
-        If Err.Number <> 0 Then
-            LogLine "plain start failed: " & Err.Number & " " & Err.Description
-        Else
-            LogLine "watchdog started (plain launch)"
-        End If
-        On Error GoTo 0
-    Else
-        LogLine "watchdog started (pid " & pid & ")"
-    End If
 End Function
 
 ' One line per run (time + what happened); the file is trimmed at 100 KB.

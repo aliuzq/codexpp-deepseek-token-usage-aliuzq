@@ -17,7 +17,7 @@
 
 Option Explicit
 
-Dim sh, fso, wmi, helperPath, nodePath
+Dim sh, fso, wmi, helperPath, nodePath, helperMissingNoted
 Set sh = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set wmi = GetObject("winmgmts:\\.\root\cimv2")
@@ -25,8 +25,12 @@ Set wmi = GetObject("winmgmts:\\.\root\cimv2")
 helperPath = ResolveHelper()
 nodePath = ResolveNode()
 
+helperMissingNoted = False
+
+' Never pop a modal box here: this script runs hidden, so a dialog would just
+' hang invisibly. Write the reason to start-helper.log and quit instead.
 If Not fso.FileExists(helperPath) Then
-    WScript.Echo "dstu-helper.mjs not found next to this script:" & vbCr & helperPath
+    LogLine "dstu-helper.mjs not found, nothing to watch: " & helperPath
     WScript.Quit 1
 End If
 
@@ -153,15 +157,48 @@ Sub StopHelper()
     Next
 End Sub
 
+' One line per state change; the log is trimmed at 100 KB.
+Sub LogLine(message)
+    Dim file, stream, logPath
+    On Error Resume Next
+    logPath = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "start-helper.log")
+    If fso.FileExists(logPath) Then
+        Set file = fso.GetFile(logPath)
+        If file.Size > 102400 Then
+            Set stream = file.OpenAsTextStream(2)
+            stream.Close
+        End If
+    End If
+    Set stream = fso.OpenTextFile(logPath, 8, True)
+    stream.WriteLine Now & "  " & message
+    stream.Close
+    If Err.Number <> 0 Then Err.Clear
+    On Error GoTo 0
+End Sub
+
 Do While True
-    If IsCodexRunning() Then
-        If Not IsHelperRunning() Then
-            sh.CurrentDirectory = fso.GetParentFolderName(helperPath)
-            sh.Run """" & nodePath & """ """ & helperPath & """", 0, False
+    If Not fso.FileExists(helperPath) Then
+        ' Antivirus or a manual cleanup can wipe the install folder. Do not spawn
+        ' node every 3 seconds against a missing file: note it once and wait for
+        ' the file to come back.
+        If Not helperMissingNoted Then
+            LogLine "helper file missing, waiting for it to come back: " & helperPath
+            helperMissingNoted = True
         End If
     Else
-        If IsHelperRunning() Then
-            StopHelper()
+        If helperMissingNoted Then
+            LogLine "helper file is back, starting it again: " & helperPath
+            helperMissingNoted = False
+        End If
+        If IsCodexRunning() Then
+            If Not IsHelperRunning() Then
+                sh.CurrentDirectory = fso.GetParentFolderName(helperPath)
+                sh.Run """" & nodePath & """ """ & helperPath & """", 0, False
+            End If
+        Else
+            If IsHelperRunning() Then
+                StopHelper()
+            End If
         End If
     End If
     WScript.Sleep 3000
